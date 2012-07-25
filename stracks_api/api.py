@@ -1,9 +1,17 @@
+"""
+    Clientside API
+"""
+
 import datetime
+from stracks_api import levels
 
 class Connector(object):
     """
         Responsible for connecting to the Stracks service.
     """
+    def send(self, data):
+        """ to be implemented """
+
 
 class HTTPConnector(Connector):
     pass
@@ -15,20 +23,30 @@ class API(object):
     def __init__(self, connector):
         self.connector = connector
 
-    def session(self):
-        return Session(self)
+    def session(self, app):
+        return Session(self, app)
+
+    def send(self, data):
+        """ send data to the connector """
+        self.connector.send(data)
 
 class Session(object):
-    def __init__(self, api):
+    def __init__(self, api, app):
         self.api = api
+        self.app = app
+        self.requests = []
 
     def request(self, ip, useragent, path):
-        return Request(self)
+        r = Request(self, ip, useragent, path)
+        self.requests.append(r)
+        return r
 
     def end(self):
         """ session ends, send data to connector """
-        ## do we need this explicitly?
-        pass
+        data = {'app':self.app, 'requests':[]}
+        for r in self.requests:
+            data['requests'].append(r.data())
+        self.api.send(data)
 
 class Entity(object):
     ## allow option to implicitly create
@@ -44,17 +62,15 @@ class Request(object):
         self.ip = ip
         self.useragent = useragent
         self.path = path
-        time = datetime.datetime.utcnow()
-        self.data = dict(ts=time,
-                         ip=self.ip,
-                         useragent=self.useragent,
-                         entries=[])
+        self.time = datetime.datetime.utcnow()
+        self.entries = []
 
-    def log(self, msg, entities=None, tags=None, action=None):
+    def log(self, msg, level=levels.INFO, entities=None, tags=None, action=None):
         ## perform some validation on msg and entities
         time = datetime.datetime.utcnow()
-        self.data.entries.append(
+        self.entries.append(
             dict(msg=msg,
+                 level=level,
                  entities=entities,
                  tags=tags,
                  action=action,
@@ -67,4 +83,12 @@ class Request(object):
 
         pass
 
-    
+    def data(self):
+        ## end time?
+        d = dict(ts=self.time,
+                 ip=self.ip,
+                 useragent=self.useragent,
+                 path=self.path,
+                 time=self.time,
+                 entries=self.entries)
+        return d
