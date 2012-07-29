@@ -3,6 +3,7 @@
 """
 
 import datetime
+import random
 from stracks_api import levels
 
 class Connector(object):
@@ -23,30 +24,43 @@ class API(object):
     def __init__(self, connector):
         self.connector = connector
 
-    def session(self, app):
-        return Session(self, app)
+    def session(self):
+        s = Session(self)
+        self.connector.send(dict(action='session_start',
+                                 sessionid=s.id))
 
-    def send(self, data):
-        """ send data to the connector """
-        self.connector.send(data)
+        return s
+
+    def send_request(self, session, data):
+        self.connector.send(dict(action="request",
+                                 sessionid=session.id,
+                                 data=data))
+
+    def session_end(self, session):
+        self.connector.send(dict(action='session_end',
+                                 id=session.id))
 
 class Session(object):
-    def __init__(self, api, app):
+    def __init__(self, api):
         self.api = api
-        self.app = app
         self.requests = []
+        self.id = datetime.datetime.now().strftime("%s.%f") \
+                         + str(random.random() * 1000000)
 
     def request(self, ip, useragent, path):
         r = Request(self, ip, useragent, path)
         self.requests.append(r)
         return r
 
+    def request_end(self, request):
+        """ request is complete, send it to connector (through API) """
+        data = request.data()
+        self.api.send_request(self, data)
+
     def end(self):
-        """ session ends, send data to connector """
-        data = {'app':self.app, 'requests':[]}
-        for r in self.requests:
-            data['requests'].append(r.data())
-        self.api.send(data)
+        """ notify that this session has ended """
+        ## collect all requests that haven't ended?
+        self.api.session_end(self)
 
 class Entity(object):
     ## allow option to implicitly create
@@ -76,12 +90,11 @@ class Request(object):
                  action=action,
                  ts=time)
         )
-
-
         # register time
         # setup default IP, useragent, etc entities
 
-        pass
+    def end(self):
+        self.session.request_end(self)
 
     def data(self):
         ## end time?

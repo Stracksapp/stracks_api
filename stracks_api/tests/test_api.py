@@ -19,57 +19,61 @@ class TestAPI(object):
         self.api = API(self.connector)
 
     def test_single_session(self):
-        s = self.api.session("app-1")
+        s = self.api.session()
         s.end()
-        data = self.connector.transcription()
-        assert len(data) == 1       # 1 entry
-        entry = data[0]
-        assert 'app' in entry
-        assert entry['app'] == "app-1"
-        assert 'requests' in entry
-        assert entry['requests'] == []
-
-    def test_multiple_session(self):
-        self.api.session("app-1").end()
-        self.api.session("app-2").end()
         data = self.connector.transcription()
         assert len(data) == 2
-        assert data[0]['app'] == "app-1"
-        assert data[1]['app'] == "app-2"
+        assert data[0].get('action') == 'session_start'
+        assert data[0]['sessionid'] == s.id
+        assert data[1].get('action') == 'session_end'
+
+
+    def test_multiple_session(self):
+        self.api.session().end()
+        self.api.session().end()
+        data = self.connector.transcription()
+        assert len(data) == 4
+        assert data[0].get('action') == 'session_start'
+        assert data[1].get('action') == 'session_end'
+        assert data[2].get('action') == 'session_start'
+        assert data[3].get('action') == 'session_end'
+
+        assert data[0].get('sessionid') != data[2].get('sessionid')
 
     def test_single_request(self):
-        s = self.api.session("app-1")
-        r = s.request("1.2.3.4", "mozilla", "/foo/bar")
+        s = self.api.session()
+        s.request("1.2.3.4", "mozilla", "/foo/bar").end()
         s.end()
         data = self.connector.transcription()
-        assert len(data) == 1       # 1 request
-        entry = data[0]
-        assert len(entry['requests']) == 1
-        request = entry['requests'][0]
+        assert len(data) == 3
+        assert data[1].get('action') == "request"
+        assert data[1].get('sessionid') == s.id
+        request = data[1].get('data', {})
         assert request['ip'] == "1.2.3.4"
         assert request['useragent'] == "mozilla"
         assert request['path'] == "/foo/bar"
         assert 'time' in request
 
     def test_multiple_requests(self):
-        s = self.api.session("app-1")
-        s.request("1.2.3.4", "mozilla", "/foo/bar")
-        s.request("1.2.3.4", "mozilla", "/foo/blah")
+        s = self.api.session()
+        s.request("1.2.3.4", "mozilla", "/foo/bar").end()
+        s.request("1.2.3.4", "mozilla", "/foo/blah").end()
         s.end()
         data = self.connector.transcription()
-        assert len(data) == 1       # 1 session
-        assert data[0]['requests'][0]['path'] == '/foo/bar'
-        assert data[0]['requests'][1]['path'] == '/foo/blah'
+        assert len(data) == 4
+        assert data[1]['data']['path'] == '/foo/bar'
+        assert data[2]['data']['path'] == '/foo/blah'
 
     def test_single_entry_simple(self):
-        s = self.api.session("app-1")
+        s = self.api.session()
         r = s.request("1.2.3.4", "mozilla", "/foo/bar")
         r.log("hello world")
+        r.end()
         s.end()
         data = self.connector.transcription()
-        assert len(data) == 1
-        assert len(data[0]['requests'][0]['entries']) == 1
-        e = data[0]['requests'][0]['entries'][0]
+        assert len(data) == 3
+        assert len(data[1]['data']['entries']) == 1
+        e = data[1]['data']['entries'][0]
         assert "msg" in e
         assert "level" in e
         assert "entities" in e
