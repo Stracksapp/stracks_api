@@ -105,11 +105,11 @@ class Session(object):
 
 class Entity(object):
     ## allow option to implicitly create
-    def __init__(self, id):
+    def __init__(self, id, name=None):
         self.entityid = id
 
-    def __call__(self, clientid):
-        return (self.entityid, clientid)
+    def __call__(self, clientid, name=None):
+        return dict(entity=self.entityid, id=clientid, name=name)
 
 
 class Request(object):

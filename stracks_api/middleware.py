@@ -1,4 +1,3 @@
-r = None
 
 #try:
 #    from django.conf import STRACKS_API
@@ -6,13 +5,14 @@ r = None
 #    STRACKS_API = None
 
 from stracks_api.api import API
+from stracks_api import log
+
 from stracksapp.connector import LocalConnector
 
 STRACKS_API = API(LocalConnector())
 
 class StracksMiddleware(object):
     def process_request(self, request):
-        global r
         if not STRACKS_API:
             return
 
@@ -24,22 +24,22 @@ class StracksMiddleware(object):
         ip = request.META.get('REMOTE_ADDR', '<none>')
         path = request.get_full_path()
         sess = request.session.get('stracks-session')
+        
         if sess is None:
             sess = STRACKS_API.session()
             request.session['stracks-session'] = sess
         request = sess.request(ip, useragent, path)
-        r = request ## use LTS
-        r.log("Hello World from MiddleWare")
+        log.set_request(request)
+        # log.log("Hello again from Middleware")
 
     def process_response(self, request, response):
-        global r
-
         if not STRACKS_API:
             return
 
-        if r is not None:
+        r = log.get_request()
+        if r:
             r.end()
-            r = None
+            log.set_request(None)
         return response
 
     def process_exception(self, request, exception):
