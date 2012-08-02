@@ -95,7 +95,11 @@ class Session(object):
     def request_end(self, request):
         """ request is complete, send it to connector (through API) """
         data = request.data()
-        self.api.send_request(self, data)
+
+        ##
+        ## Ignore request with no actual log entries (for now)
+        if 'entries' in data and len(data['entries']):
+            self.api.send_request(self, data)
 
     def end(self):
         """ notify that this session has ended """

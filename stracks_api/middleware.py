@@ -24,7 +24,7 @@ class StracksMiddleware(object):
         ip = request.META.get('REMOTE_ADDR', '<none>')
         path = request.get_full_path()
         sess = request.session.get('stracks-session')
-        
+
         if sess is None:
             sess = STRACKS_API.session()
             request.session['stracks-session'] = sess
