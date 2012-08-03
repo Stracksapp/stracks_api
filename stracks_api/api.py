@@ -111,6 +111,7 @@ class Entity(object):
     def __call__(self, clientid, name=None):
         return dict(entity=self.entityid, id=clientid, name=name)
 
+
 class Action(object):
     def __init__(self, id):
         self.actionid = id
@@ -125,7 +126,8 @@ class Request(object):
         self.ip = ip
         self.useragent = useragent
         self.path = path
-        self.time = datetime.datetime.utcnow()
+        self.started = datetime.datetime.utcnow()
+        self.ended = None
         self.entries = []
 
     def log(self, msg, level=levels.INFO, entities=(), tags=(), action=None):
@@ -137,20 +139,19 @@ class Request(object):
                  entities=entities,
                  tags=tags,
                  action=action,
-                 ts=time)
+                 ts=time.isoformat())
         )
-        # register time
-        # setup default IP, useragent, etc entities
 
     def end(self):
+        self.ended = datetime.datetime.utcnow()
         self.session.request_end(self)
 
     def data(self):
         ## end time?
-        d = dict(ts=self.time,
-                 ip=self.ip,
+        d = dict(ip=self.ip,
                  useragent=self.useragent,
                  path=self.path,
-                 time=self.time,
+                 started=self.started.isoformat(),
+                 ended=self.ended.isoformat(),
                  entries=self.entries)
         return d

@@ -27,4 +27,4 @@ def _log(msg, entities=(), action=None, tags=(), level=levels.INFO):
 
     r = get_request()
     if r:
-        r.log(msg, entities=entities, action=action)
+        r.log(msg, entities=entities, action=action, tags=tags)
