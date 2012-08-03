@@ -95,11 +95,7 @@ class Session(object):
     def request_end(self, request):
         """ request is complete, send it to connector (through API) """
         data = request.data()
-
-        ##
-        ## Ignore request with no actual log entries (for now)
-        if 'entries' in data and len(data['entries']):
-            self.api.send_request(self, data)
+        self.api.send_request(self, data)
 
     def end(self):
         """ notify that this session has ended """
@@ -109,11 +105,18 @@ class Session(object):
 
 class Entity(object):
     ## allow option to implicitly create
-    def __init__(self, id, name=None):
+    def __init__(self, id):
         self.entityid = id
 
     def __call__(self, clientid, name=None):
         return dict(entity=self.entityid, id=clientid, name=name)
+
+class Action(object):
+    def __init__(self, id):
+        self.actionid = id
+
+    def __call__(self):
+        return dict(action=self.actionid)
 
 
 class Request(object):

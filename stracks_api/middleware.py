@@ -5,7 +5,7 @@
 #    STRACKS_API = None
 
 from stracks_api.api import API
-from stracks_api import log
+from stracks_api import client
 
 from stracksapp.connector import LocalConnector
 
@@ -29,17 +29,16 @@ class StracksMiddleware(object):
             sess = STRACKS_API.session()
             request.session['stracks-session'] = sess
         request = sess.request(ip, useragent, path)
-        log.set_request(request)
-        # log.log("Hello again from Middleware")
+        client.set_request(request)
 
     def process_response(self, request, response):
         if not STRACKS_API:
             return
 
-        r = log.get_request()
+        r = client.get_request()
         if r:
             r.end()
-            log.set_request(None)
+            client.set_request(None)
         return response
 
     def process_exception(self, request, exception):
