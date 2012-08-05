@@ -1,5 +1,6 @@
 from stracks_api.api import Connector, API, Entity, Action
 from stracks_api import levels
+from stracks_api.util import parse_dt
 
 class DummyConnector(Connector):
     def __init__(self):
@@ -53,7 +54,12 @@ class TestAPI(object):
         assert request['ip'] == "1.2.3.4"
         assert request['useragent'] == "mozilla"
         assert request['path'] == "/foo/bar"
-        assert 'time' in request
+        assert 'started' in request
+        assert 'ended' in request
+
+        ## verify it's a parsable string
+        assert parse_dt(request['started'])
+        assert parse_dt(request['ended'])
 
     def test_multiple_requests(self):
         s = self.api.session()

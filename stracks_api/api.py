@@ -4,6 +4,9 @@
 
 import datetime
 import random
+import requests
+import json
+
 from stracks_api import levels
 
 class ConnectorException(Exception):
@@ -35,6 +38,10 @@ class Connector(object):
         raise NotImplementedAction("request")
 
     def send(self, data):
+        """
+            Do we need the send() intermediate call?
+            Why not just invoke the relevant methods directly?
+        """
         action = data.get('action')
         if action is None:
             raise MissingAction()
@@ -53,11 +60,44 @@ class Connector(object):
 
 
 class HTTPConnector(Connector):
-    pass
+    """
+        Connect to the API synchronously through HTTP
+    """
+    def __init__(self, url):
+        """
+            A HTTP connector takes the url of the API / AppInstance as
+            argument
+        """
+        self.url = url
+
+    def session_start(self, sessionid):
+        data = {}
+        data['started'] = datetime.datetime.now().isoformat()
+        data['sessionid'] = sessionid
+        self.send_request("start", data)
+
+    def session_end(self, sessionid):
+        data = {}
+        data['ended'] = datetime.datetime.now().isoformat()
+        data['sessionid'] = sessionid
+        self.send_request("end", data)
+
+    def request(self, sessionid, requestdata):
+        data = {}
+        data['sessionid'] = sessionid
+        data['requestdata'] = requestdata
+        self.send_request("request", data)
+
+    def send_request(self, action, data):
+        requests.post(self.url + "/" + action, json.dumps(data))
 
 
 class RedisConnector(Connector):
-    pass
+    """
+        A connector that simply stores data in redis (or any other keystore?),
+        where a separate task is responsible for sending the data to the 
+        Stracks API
+    """
 
 
 class API(object):
