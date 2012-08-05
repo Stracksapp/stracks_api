@@ -89,7 +89,7 @@ class HTTPConnector(Connector):
         self.send_request("request", data)
 
     def send_request(self, action, data):
-        requests.post(self.url + "/" + action, json.dumps(data))
+        requests.post(self.url + "/" + action, data=json.dumps(data))
 
 
 class RedisConnector(Connector):

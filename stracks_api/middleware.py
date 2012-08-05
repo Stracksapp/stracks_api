@@ -1,15 +1,18 @@
 
-#try:
-#    from django.conf import STRACKS_API
-#except ImportError:
-#    STRACKS_API = None
+try:
+    from django.conf import settings
+    STRACKS_CONNECTOR = settings.STRACKS_CONNECTOR
+except ImportError:
+    STRACKS_CONNECTOR = None
+    STRACKS_API = None
 
 from stracks_api.api import API
 from stracks_api import client
 
-from stracksapp.connector import LocalConnector
+STRACKS_API = None
 
-STRACKS_API = API(LocalConnector())
+if STRACKS_CONNECTOR:
+    STRACKS_API = API(STRACKS_CONNECTOR)
 
 class StracksMiddleware(object):
     def process_request(self, request):
@@ -33,7 +36,7 @@ class StracksMiddleware(object):
 
     def process_response(self, request, response):
         if not STRACKS_API:
-            return
+            return response
 
         r = client.get_request()
         if r:
