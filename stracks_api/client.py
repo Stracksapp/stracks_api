@@ -1,4 +1,6 @@
 from stracks_api import levels
+import collections
+import types
 
 import threading
 threadlocal = threading.local()
@@ -19,10 +21,8 @@ def log(msg, entities=(), action=None, tags=()):
     _log(msg, entities, action, tags, levels.INFO)
 
 def _log(msg, entities=(), action=None, tags=(), level=levels.INFO):
-    ## handle non-sequence entitites
-    try:
-        entities[0]
-    except IndexError:
+    if not isinstance(entities, collections.Iterable) \
+        or isinstance(entities, types.StringTypes):
         entities = (entities,)
 
     r = get_request()

@@ -19,14 +19,14 @@ class Command(BaseCommand):
         r2 = s.request("1.2.3.4", "api test client", "/complex")
         r2.log("User ? on cart item ? doing some action",
                level=levels.INFO,
-               entities=(user(123, "Ivo van der Wijk"),
+               entities=(user(123, "Woody Woodpecker"),
                          cart(123, "Apple Macbook")),
                tags=("test", "api", "user", "cart"),
                action=order())
         r2.log("User ? eating cart item ?",
                level=levels.DEBUG,
-               entities=(user(124, "Maaike Roelofs"),
-                         cart(124, "Reep Chocola")),
+               entities=(user(124, "Buggs Bunny"),
+                         cart(124, "Candy bar")),
                tags=("test", "api", "user", "cart"),
                action=order())
         r2.end()

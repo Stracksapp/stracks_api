@@ -72,13 +72,13 @@ class HTTPConnector(Connector):
 
     def session_start(self, sessionid):
         data = {}
-        data['started'] = datetime.datetime.now().isoformat()
+        data['started'] = datetime.datetime.utcnow().isoformat()
         data['sessionid'] = sessionid
         self.send_request("start", data)
 
     def session_end(self, sessionid):
         data = {}
-        data['ended'] = datetime.datetime.now().isoformat()
+        data['ended'] = datetime.datetime.utcnow().isoformat()
         data['sessionid'] = sessionid
         self.send_request("end", data)
 
@@ -124,7 +124,7 @@ class Session(object):
     def __init__(self, api):
         self.api = api
         self.requests = []
-        self.id = datetime.datetime.now().strftime("%s.%f") \
+        self.id = datetime.datetime.utcnow().strftime("%s.%f") \
                          + str(random.random() * 1000000)
 
     def request(self, ip, useragent, path):

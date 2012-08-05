@@ -7,7 +7,7 @@ except ImportError:
     STRACKS_API = None
 
 from stracks_api.api import API
-from stracks_api import client
+from stracks_api import client, levels
 
 STRACKS_API = None
 
@@ -47,6 +47,10 @@ class StracksMiddleware(object):
     def process_exception(self, request, exception):
         ##
         ## fetch request, log exception
+        # import pdb; pdb.set_trace()
+        r = client.get_request()
+        if r:
+            r.log("Crash: %s" % exception, level=levels.EXCEPTION)
         if not STRACKS_API:
             return
 
