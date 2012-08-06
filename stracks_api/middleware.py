@@ -48,9 +48,17 @@ class StracksMiddleware(object):
         ##
         ## fetch request, log exception
         # import pdb; pdb.set_trace()
+        import sys, traceback, cStringIO
+
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        io = cStringIO.StringIO()
+        traceback.print_exception(exc_type, exc_value, exc_tb, None, io)
+        s = io.getvalue()
+        io.close()
+
         r = client.get_request()
         if r:
-            r.log("Crash: %s" % exception, level=levels.EXCEPTION)
+            r.log("Crash: %s: %s" % (exception, s), level=levels.EXCEPTION)
         if not STRACKS_API:
             return
 
