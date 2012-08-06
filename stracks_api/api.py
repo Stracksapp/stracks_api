@@ -69,27 +69,33 @@ class HTTPConnector(Connector):
             argument
         """
         self.url = url
+        self.queue = []
 
     def session_start(self, sessionid):
         data = {}
         data['started'] = datetime.datetime.utcnow().isoformat()
         data['sessionid'] = sessionid
-        self.send_request("start", data)
+        self.queue.append({'action':'start', 'data':data})
+        self.flush()
 
     def session_end(self, sessionid):
         data = {}
         data['ended'] = datetime.datetime.utcnow().isoformat()
         data['sessionid'] = sessionid
-        self.send_request("end", data)
+        self.queue.append({'action':'end', 'data':data})
+        self.flush()
 
     def request(self, sessionid, requestdata):
         data = {}
         data['sessionid'] = sessionid
         data['requestdata'] = requestdata
-        self.send_request("request", data)
+        self.queue.append({'action':'request', 'data':data})
+        self.flush()
 
-    def send_request(self, action, data):
-        requests.post(self.url + "/" + action, data=json.dumps(data))
+    def flush(self):
+        if self.queue:
+            requests.post(self.url + "/", data=json.dumps(self.queue))
+            self.queue = []
 
 
 class RedisConnector(Connector):
