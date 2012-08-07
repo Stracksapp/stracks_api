@@ -6,6 +6,9 @@ import datetime
 import random
 import requests
 import json
+import sys
+import cStringIO
+import traceback
 
 from stracks_api import levels
 
@@ -101,7 +104,7 @@ class HTTPConnector(Connector):
 class RedisConnector(Connector):
     """
         A connector that simply stores data in redis (or any other keystore?),
-        where a separate task is responsible for sending the data to the 
+        where a separate task is responsible for sending the data to the
         Stracks API
     """
 
@@ -176,16 +179,48 @@ class Request(object):
         self.ended = None
         self.entries = []
 
-    def log(self, msg, level=levels.INFO, entities=(), tags=(), action=None):
+    def log(self, msg, level=levels.INFO, entities=(), tags=(), action=None,
+            exception=None, data=None):
         ## perform some validation on msg and entities
         time = datetime.datetime.utcnow()
+
+        ##
+        ## exception can be a simpel truth value in which case the current
+        ## exception will be passed, or an actual exception tuple such as
+        ## returned by sys.exc_info()
+
+        exc_as_string = None
+        if exception:
+            if not isinstance(exception, tuple):
+                exception = sys.exc_info()
+            exc_type, exc_value, exc_tb = exception
+
+            io = cStringIO.StringIO()
+            traceback.print_exception(exc_type, exc_value, exc_tb, None, io)
+            exc_as_string = io.getvalue()
+            io.close()
+
+        if data:
+            ##
+            ## If data is passed it should be a dict containing the schema
+            ## identifier of the data and the data itself. If not, convert it
+            ## to such with a default, 'generic' schema.
+            ## Schema's help us to nicely format/represent the data
+            try:
+                data['schema']  ## it might not even be a dict
+            except (KeyError, TypeError):
+                data = dict(schema='generic', data=data)
+            data = json.dumps(data)
+
         self.entries.append(
             dict(msg=msg,
                  level=level,
                  entities=entities,
                  tags=tags,
                  action=action,
-                 ts=time.isoformat())
+                 ts=time.isoformat(),
+                 exception=exc_as_string,
+                 data=data)
         )
 
     def end(self):

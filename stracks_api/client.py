@@ -14,17 +14,53 @@ def get_request():
     except AttributeError:
         return None
 
-def debug(msg, entities=(), action=None, tags=()):
-    _log(msg, entities, action, tags, levels.DEBUG)
+class Logger(object):
+    """
+        The request is where logging is stored on.
+    """
+    @property
+    def r(self):
+        return get_request()
 
-def log(msg, entities=(), action=None, tags=()):
-    _log(msg, entities, action, tags, levels.INFO)
+    def __call__(self, msg, entities=(), action=None, tags=(),
+                 level=levels.INFO, exception=None, data=None):
+        if not self.r:
+            return  ## can't do anything without a request
 
-def _log(msg, entities=(), action=None, tags=(), level=levels.INFO):
-    if not isinstance(entities, collections.Iterable) \
-        or isinstance(entities, types.StringTypes):
-        entities = (entities,)
+        if not isinstance(entities, collections.Iterable) \
+            or isinstance(entities, types.StringTypes):
+            entities = (entities,)
 
-    r = get_request()
-    if r:
-        r.log(msg, entities=entities, action=action, tags=tags)
+        self.r.log(msg, entities=entities, action=action, tags=tags,
+                   level=level, exception=exception, data=data)
+
+logger = Logger()
+
+def debug(msg, entities=(), action=None, tags=(), exception=None, data=None):
+    logger(msg, entities=entities, action=action, tags=tags,
+         level=levels.DEBUG, exception=exception, data=data)
+
+def info(msg, entities=(), action=None, tags=(), exception=None, data=None):
+    logger(msg, entities=entities, action=action, tags=tags,
+         level=levels.INFO, exception=exception, data=data)
+
+log = info
+def warning(msg, entities=(), action=None, tags=(), exception=None, data=None):
+    logger(msg, entities=entities, action=action, tags=tags,
+         level=levels.WARNING, exception=exception, data=data)
+
+def error(msg, entities=(), action=None, tags=(), exception=None, data=None):
+    logger(msg, entities=entities, action=action, tags=tags,
+         level=levels.ERROR, exception=exception, data=data)
+
+fatal = error
+
+def critical(msg, entities=(), action=None, tags=(), exception=None, data=None):
+    logger(msg, entities=entities, action=action, tags=tags,
+         level=levels.INFO, exception=exception, data=data)
+
+def exception(msg, entities=(), action=None, tags=(), exception=None, data=None):
+    """ if no exception is specified default to True """
+    logger(msg, entities=entities, action=action, tags=tags,
+         level=levels.INFO, exception=exception or True, data=data)
+
