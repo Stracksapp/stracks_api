@@ -57,10 +57,10 @@ fatal = error
 
 def critical(msg, entities=(), action=None, tags=(), exception=None, data=None):
     logger(msg, entities=entities, action=action, tags=tags,
-         level=levels.INFO, exception=exception, data=data)
+         level=levels.CRITICAL, exception=exception, data=data)
 
 def exception(msg, entities=(), action=None, tags=(), exception=None, data=None):
     """ if no exception is specified default to True """
     logger(msg, entities=entities, action=action, tags=tags,
-         level=levels.INFO, exception=exception or True, data=data)
+         level=levels.EXCEPTION, exception=exception or True, data=data)
 
