@@ -90,7 +90,6 @@ class HTTPConnector(Connector):
         self.flush()
 
     def flush(self):
-        print "BAAP"
         if self.queue:
             requests.post(self.url + "/", data=json.dumps(self.queue))
             self.queue = []
@@ -99,37 +98,99 @@ import threading
 import Queue
 import atexit
 
+import logging
+
+logger = logging.getLogger("stracks")
+
 class ASyncHTTPConnector(HTTPConnector):
     thread = None
+    terminate = object()
+    DEBUG = True
+
+    TIMEOUT = 10 # seconds
 
     def __init__(self, url):
         super(ASyncHTTPConnector, self).__init__(url)
         self.thread = None
         self.lock = threading.Lock()
         self.thread_queue = Queue.Queue()
-        self.running = False
+        self.backlog = []
+
+    def debug(self, s):
+        if self.DEBUG:
+            print s
 
     def loop(self):
-        self.running = True
-        while self.running:
-            print "Loop"
-            item = self.thread_queue.get()
-            ## https://github.com/kennethreitz/grequests ?
-            ## catch exceptions, retry later
-            requests.post(self.url + "/", data=json.dumps(item))
-            print "Post", json.dumps(item)
-        print "Thread ends"
+        while True:
+            self.debug("Loop")
+            try:
+                item = self.thread_queue.get(timeout=10)
+                self.backlog.append(item)
+            except Queue.Empty:
+                self.debug("Queue 10 sec timeout")
+
+            self.debug("Queue size: %d, backlog size: %d" % (self.thread_queue.qsize(), len(self.backlog)))
+
+            ##
+            ## flush entire backlog if possible. May be just one item
+            ## (or none at all if queue.get timed out)
+            while self.backlog:
+                item = self.backlog[0]
+                if item is self.terminate:
+                    self.debug("Terminating")
+                    return  # break out of two loops
+
+                ## https://github.com/kennethreitz/grequests ?
+
+                error = False
+                try:
+                    requests.post(self.url + "/", data=json.dumps(item),
+                                  timeout=self.TIMEOUT)
+                    self.backlog.pop()
+                except requests.exceptions.Timeout:
+                    self.debug("Connection timed out")
+                    error = True
+                except requests.exceptions.TooManyRedirects:
+                    self.debug("Too many redirects")
+                    error = True
+                except requests.exceptions.URLRequired:
+                    self.debug("Not a valid URL")
+                    error = True
+                except requests.exceptions.SSLError:
+                    self.debug("SSL Error")
+                    error = True
+                except requests.exceptions.ConnectionError:
+                    self.debug("Connection error")
+                    error = True
+                except requests.exceptions.HTTPError:
+                    self.debug("HTTP error")
+                    error = True
+                except requests.exceptions.RequestException:
+                    self.debug("Request exception")
+                    error = True
+                except Exception, e:
+                    self.debug("Unknown exception: " + str(e))
+                    error = True
+                if error:
+                    ## increase the delay, but not infinitely
+                    # delay = 10 * min(5, tries)
+                    ## log error so we can report it eventually
+                    self.debug("Delaying")
+                    break
+
+                self.debug("Post" + json.dumps(item))
 
     def stop(self):
         self.lock.acquire()
         try:
             print "Stopping thread"
             if self.thread is not None:
-                self.running = False
+                self.thread_queue.put_nowait(self.terminate)
                 self.thread.join()
                 self.thread = None
         finally:
             self.lock.release()
+        print "Thread stopped"
 
     def flush(self):
         """ flush queue to thread """

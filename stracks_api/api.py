@@ -31,6 +31,11 @@ class API(object):
         return s
 
     def send_request(self, session, data):
+        """
+            Ignore request if it has no (relevant) entries
+        """
+        if not data.get('entries'):
+            return
         STRACKS_CONNECTOR.send(dict(action="request",
                                  sessionid=session.id,
                                  data=data))
