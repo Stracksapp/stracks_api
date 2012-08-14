@@ -12,7 +12,7 @@ from stracks_api import client, levels
 STRACKS_API = None
 
 if STRACKS_CONNECTOR:
-    STRACKS_API = API(STRACKS_CONNECTOR)
+    STRACKS_API = API()
 
 class StracksMiddleware(object):
     def process_request(self, request):
@@ -38,6 +38,8 @@ class StracksMiddleware(object):
         if not STRACKS_API:
             return response
 
+        # import pdb; pdb.set_trace()
+        
         r = client.get_request()
         if r:
             r.end()
