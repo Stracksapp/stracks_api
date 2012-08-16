@@ -21,12 +21,15 @@ except ImportError:
 
 
 class API(object):
-    def __init__(self):
-        pass
+    def __init__(self, connector=None):
+        self.connector = connector
+
+    def _get_connector(self):
+        return self.connector or STRACKS_CONNECTOR
 
     def session(self):
         s = Session(self)
-        STRACKS_CONNECTOR.send(dict(action='session_start',
+        self._get_connector().send(dict(action='session_start',
                                  sessionid=s.id))
         return s
 
@@ -36,12 +39,12 @@ class API(object):
         """
         if not data.get('entries'):
             return
-        STRACKS_CONNECTOR.send(dict(action="request",
+        self._get_connector().send(dict(action="request",
                                  sessionid=session.id,
                                  data=data))
 
     def session_end(self, session):
-        STRACKS_CONNECTOR.send(dict(action='session_end',
+        self._get_connector().send(dict(action='session_end',
                                  sessionid=session.id))
 
 
