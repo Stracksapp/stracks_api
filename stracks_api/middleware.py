@@ -38,10 +38,22 @@ class StracksMiddleware(object):
         if not STRACKS_API:
             return response
 
-        # import pdb; pdb.set_trace()
-        
         r = client.get_request()
+
         if r:
+            if not request.user.is_anonymous():
+                ## if there's an active user then he owns
+                ## the request. We need to map it to an
+                ## entity
+                from django.utils.importlib import import_module
+                ueb = getattr(settings, 'USER_ENTITY_BUILDER', None)
+                if ueb:
+                    ## XXX error handling
+                    modstr, func = settings.USER_ENTITY_BUILDER.rsplit('.', 1)
+                    mod = import_module(modstr)
+                    f = getattr(mod, func)
+                    r.set_owner(f(request.user))
+
             r.end()
             client.set_request(None)
         return response

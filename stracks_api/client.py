@@ -34,7 +34,13 @@ class Logger(object):
         self.r.log(msg, entities=entities, action=action, tags=tags,
                    level=level, exception=exception, data=data)
 
+    def set_owner(self, owner):
+        self.r.set_owner(owner)
+
 logger = Logger()
+
+def set_owner(u):
+    logger.set_owner(u)
 
 def debug(msg, entities=(), action=None, tags=(), exception=None, data=None):
     logger(msg, entities=entities, action=action, tags=tags,

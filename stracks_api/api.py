@@ -33,6 +33,10 @@ class API(object):
                                  sessionid=s.id))
         return s
 
+    def set_owner(self, sessionid, owner):
+        self._get_connector().send(dict(action="owner",
+                                        sessionid=sessionid,
+                                        owner=owner))
     def send_request(self, session, data):
         """
             Ignore request if it has no (relevant) entries
@@ -72,6 +76,9 @@ class Session(object):
 
 
 class Entity(object):
+    """
+        These are actually roles, not entities
+    """
     ## allow option to implicitly create
     def __init__(self, id):
         self.entityid = id
@@ -97,6 +104,7 @@ class Request(object):
         self.started = datetime.datetime.utcnow()
         self.ended = None
         self.entries = []
+        self.owner = None
 
     def log(self, msg, level=levels.INFO, entities=(), tags=(), action=None,
             exception=None, data=None):
@@ -146,6 +154,11 @@ class Request(object):
         self.ended = datetime.datetime.utcnow()
         self.session.request_end(self)
 
+    def set_owner(self, owner):
+        """ sets the owner for this request. Can be any entity, but it's usually
+            a (system) user """
+        self.owner = owner
+
     def data(self):
         ## end time?
         d = dict(ip=self.ip,
@@ -153,5 +166,6 @@ class Request(object):
                  path=self.path,
                  started=self.started.isoformat(),
                  ended=self.ended.isoformat(),
-                 entries=self.entries)
+                 entries=self.entries,
+                 owner=self.owner)
         return d
