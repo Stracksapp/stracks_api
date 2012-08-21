@@ -181,15 +181,12 @@ class ASyncHTTPConnector(HTTPConnector):
                 self.debug("Post" + json.dumps(item))
 
     def stop(self):
-        self.lock.acquire()
-        try:
+        with self.lock:
             print "Stopping thread"
             if self.thread is not None:
                 self.thread_queue.put_nowait(self.terminate)
                 self.thread.join()
                 self.thread = None
-        finally:
-            self.lock.release()
         print "Thread stopped"
 
     def flush(self):
@@ -197,16 +194,13 @@ class ASyncHTTPConnector(HTTPConnector):
         print "Flushing", self.queue
         if self.queue:
             if self.thread is None:
-                self.lock.acquire()
-                try:
+                with self.lock:
                     self.thread = threading.Thread(target=self.loop)
                     self.thread.setDaemon(True)
                     print "Starting thread"
                     self.thread.start()
                     print "Thread started"
-                finally:
-                    self.lock.release()
-                    atexit.register(self.stop)
+                atexit.register(self.stop)
 
             self.thread_queue.put_nowait(self.queue)
             self.queue = []
