@@ -84,7 +84,8 @@ class Entity(object):
         self.entityid = id
 
     def __call__(self, clientid, name=None):
-        return dict(entity=self.entityid, id=clientid, name=name)
+        return dict(entity=self.entityid, id=clientid,
+                    name=(name or self.entityid))
 
 
 class Action(object):
