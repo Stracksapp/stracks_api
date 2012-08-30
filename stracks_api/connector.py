@@ -105,19 +105,19 @@ logger = logging.getLogger("stracks")
 class ASyncHTTPConnector(HTTPConnector):
     thread = None
     terminate = object()
-    DEBUG = True
 
     TIMEOUT = 10 # seconds
 
-    def __init__(self, url):
+    def __init__(self, url, debug=False):
         super(ASyncHTTPConnector, self).__init__(url)
         self.thread = None
         self.lock = threading.Lock()
         self.thread_queue = Queue.Queue()
         self.backlog = []
+        self._debug = debug
 
     def debug(self, s):
-        if self.DEBUG:
+        if self._debug:
             print s
 
     def loop(self):
