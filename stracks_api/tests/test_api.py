@@ -135,13 +135,13 @@ class TestEntry(object):
     def test_entities(self):
         """ test multiple entities """
         self.request.log("Hello World", entities=(Entity(1337)(12, "Demo"),
-                                                  Entity(42)(1337, "leet")))
+                                                  Entity(42)(1337, "omeD")))
         self.request.end()
         entry = self.get_entry()
         assert 'entities' in entry
         assert len(entry['entities']) == 2
         assert entry['entities'][0] == dict(entity=1337, id=12, name="Demo")
-        assert entry['entities'][1] == dict(entity=42, id=1337, name="leet")
+        assert entry['entities'][1] == dict(entity=42, id=1337, name="omeD")
 
     def test_no_action(self):
         """ test missing (optional) action """
