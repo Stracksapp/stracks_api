@@ -183,27 +183,27 @@ class ASyncHTTPConnector(HTTPConnector):
     def stop(self):
         self.lock.acquire()
         try:
-            print "Stopping thread"
+            self.debug("Stopping thread")
             if self.thread is not None:
                 self.thread_queue.put_nowait(self.terminate)
                 self.thread.join()
                 self.thread = None
         finally:
             self.lock.release()
-        print "Thread stopped"
+        self.debug("Thread stopped")
 
     def flush(self):
         """ flush queue to thread """
-        print "Flushing", self.queue
+        self.debug("Flushing " + str(self.queue))
         if self.queue:
             if self.thread is None:
                 self.lock.acquire()
                 try:
                     self.thread = threading.Thread(target=self.loop)
                     self.thread.setDaemon(True)
-                    print "Starting thread"
+                    self.debug("Starting thread")
                     self.thread.start()
-                    print "Thread started"
+                    self.debug("Thread started")
                 finally:
                     self.lock.release()
                 atexit.register(self.stop)
