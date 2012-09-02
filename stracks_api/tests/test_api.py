@@ -208,6 +208,22 @@ class TestClient(object):
     def setup(self):
         self.log = TestableLogger()
 
+    def test_entities(self):
+        """ oldstyle keyword entities """
+        e = Entity("thingy")
+        self.log.log("? bla ?", e(1), e(2))
+        assert len(self.log.r.entries) == 1
+        assert len(self.log.r.entries[0]['entities']) == 2
+        assert self.log.r.entries[0]['entities'] == (e(1), e(2))
+
+    def test_entities_oldstyle(self):
+        """ oldstyle keyword entities """
+        e = Entity("thingy")
+        self.log.log("? bla ?", entities=(e(1), e(2)))
+        assert len(self.log.r.entries) == 1
+        assert len(self.log.r.entries[0]['entities']) == 2
+        assert self.log.r.entries[0]['entities'] == (e(1), e(2))
+
     def test_levels(self):
         log = TestableLogger()
         def test_level(m, l):
