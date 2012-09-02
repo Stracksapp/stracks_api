@@ -76,16 +76,15 @@ class Session(object):
         self.api.session_end(self)
 
 
-class EntityInstance(Logger, dict):
-    def __init__(self, *args, **kw):
-        super(EntityInstance, self).__init__(*args, **kw)
-        self.entity = self
-
 class Entity(object):
     """
         These are actually roles, not entities
     """
-    instance_class = EntityInstance
+    class instance_class(Logger, dict):
+        def __init__(self, *args, **kw):
+            super(Entity.instance_class, self).__init__(*args, **kw)
+            self.entity = self
+
     ## allow option to implicitly create
     def __init__(self, id):
         self.entityid = id

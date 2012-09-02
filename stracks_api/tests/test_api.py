@@ -1,10 +1,9 @@
-from stracks_api.api import API, Entity, Action, EntityInstance, Request
+from stracks_api.api import API, Entity, Action, Request
 from stracks_api.client import Logger
 
 from stracks_api.connector import Connector
 
 from stracks_api import levels
-from stracks_api.util import parse_dt
 
 class DummyConnector(Connector):
     def __init__(self):
@@ -207,11 +206,9 @@ class Testable(object):
     def r(self):
         return self._r
 
-class TestableEntityInstance(Testable, EntityInstance):
-    pass
-
 class TestableEntity(Entity):
-    instance_class = TestableEntityInstance
+    class instance_class(Testable, Entity.instance_class):
+        pass
 
 class TestableAction(Testable, Action):
     pass
