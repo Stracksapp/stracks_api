@@ -77,9 +77,6 @@ class Session(object):
 
 
 class Entity(object):
-    """
-        These are actually roles, not entities
-    """
     class instance_class(Logger, dict):
         def __init__(self, *args, **kw):
             super(Entity.instance_class, self).__init__(*args, **kw)
