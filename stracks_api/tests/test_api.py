@@ -1,4 +1,6 @@
-from stracks_api.api import API, Entity, Action
+from stracks_api.api import API, Entity, Action, EntityInstance, Request
+from stracks_api.client import Logger
+
 from stracks_api.connector import Connector
 
 from stracks_api import levels
@@ -45,33 +47,27 @@ class TestAPI(object):
         assert data[0].get('sessionid') != data[2].get('sessionid')
 
     def test_single_request(self):
+        """ A single request with no entries should result in
+            the request not being logged at all """
         s = self.api.session()
         s.request("1.2.3.4", "mozilla", "/foo/bar").end()
         s.end()
         data = self.connector.transcription()
-        assert len(data) == 3
-        assert data[1].get('action') == "request"
-        assert data[1].get('sessionid') == s.id
-        request = data[1].get('data', {})
-        assert request['ip'] == "1.2.3.4"
-        assert request['useragent'] == "mozilla"
-        assert request['path'] == "/foo/bar"
-        assert 'started' in request
-        assert 'ended' in request
-
-        ## verify it's a parsable string
-        assert parse_dt(request['started'])
-        assert parse_dt(request['ended'])
+        assert len(data) == 2
+        assert data[0].get('action') == "session_start"
+        assert data[1].get('action') == "session_end"
 
     def test_multiple_requests(self):
+        """ even multiple requests should end in no actual requests
+            being logged """
         s = self.api.session()
         s.request("1.2.3.4", "mozilla", "/foo/bar").end()
         s.request("1.2.3.4", "mozilla", "/foo/blah").end()
         s.end()
         data = self.connector.transcription()
-        assert len(data) == 4
-        assert data[1]['data']['path'] == '/foo/bar'
-        assert data[2]['data']['path'] == '/foo/blah'
+        assert len(data) == 2
+        assert data[0].get('action') == "session_start"
+        assert data[1].get('action') == "session_end"
 
     def test_single_entry_simple(self):
         s = self.api.session()
@@ -128,16 +124,25 @@ class TestEntry(object):
         assert len(entry['entities']) == 1
         assert entry['entities'][0] == dict(entity=1337, id=12, name="Demo")
 
+    def test_entity_default_name(self):
+        """ if no explicit name is specified, id becomes name """
+        self.request.log("Hello World", entities=(Entity("entity")(12),))
+        self.request.end()
+        entry = self.get_entry()
+        assert 'entities' in entry
+        assert len(entry['entities']) == 1
+        assert entry['entities'][0] == dict(entity="entity", id=12, name="12")
+
     def test_entities(self):
         """ test multiple entities """
         self.request.log("Hello World", entities=(Entity(1337)(12, "Demo"),
-                                                  Entity(42)(1337)))
+                                                  Entity(42)(1337, "leet")))
         self.request.end()
         entry = self.get_entry()
         assert 'entities' in entry
         assert len(entry['entities']) == 2
         assert entry['entities'][0] == dict(entity=1337, id=12, name="Demo")
-        assert entry['entities'][1] == dict(entity=42, id=1337, name=None)
+        assert entry['entities'][1] == dict(entity=42, id=1337, name="leet")
 
     def test_no_action(self):
         """ test missing (optional) action """
@@ -177,8 +182,103 @@ class TestEntry(object):
         assert entry['tags'][0] == "tag1"
         assert entry['tags'][1] == "tag2"
 
+class DummyRequest(list, Request):
+    def __init__(self):
+        self.entries = self
+
+    def set_owner(self, o):
+        pass
+
+    def xlog(self, msg, level=levels.INFO, entities=(), tags=(), action=None,
+            exception=None, data=None):
+        self.append(dict(msg=msg, level=level, entities=entities,
+                              tags=tags, action=action, exception=exception,
+                              data=data))
+
+    def __nonzero__(self):
+        return True
+
+class Testable(object):
+    def __init__(self, *args, **kw):
+        super(Testable, self).__init__(*args, **kw)
+        self._r = DummyRequest()
+
+    @property
+    def r(self):
+        return self._r
+
+class TestableEntityInstance(Testable, EntityInstance):
+    pass
+
+class TestableEntity(Entity):
+    instance_class = TestableEntityInstance
+
+class TestableAction(Testable, Action):
+    pass
+
+class TestableLogger(Testable, Logger):
+    pass
+
 class TestClient(object):
     """
         Test the client api
     """
+    def setup(self):
+        self.log = TestableLogger()
 
+    def test_levels(self):
+        log = TestableLogger()
+        def test_level(m, l):
+            m("test %d" % l)
+            assert log.r[-1]['level'] == l
+
+        for method, level in ((log.debug, levels.DEBUG),
+                              (log.info, levels.INFO),
+                              (log.log, levels.INFO),
+                              (log.warning, levels.WARNING),
+                              (log.error, levels.ERROR),
+                              (log.critical, levels.CRITICAL),
+                              (log.exception, levels.EXCEPTION)):
+            yield test_level, method, level
+
+    def test_exception(self):
+        try:
+            raise ValueError("magic-marker-123")
+        except ValueError:
+            self.log.exception("Something went wrong")
+
+        assert len(self.log.r) == 1
+        assert 'magic-marker-123' in self.log.r[0]['exception']
+
+class TestEntityClient(object):
+    """
+        Test an entity being used as a logging client
+    """
+    def test_default(self):
+        a = TestableEntity("something")("someone")
+        a.log("Hello World")
+        assert len(a.r) == 1
+        assert a.r[0]['entities'][0]['entity'] == "something"
+
+    def test_override(self):
+        a = TestableEntity("something")("someone")
+        a.log("Hello World", entities=(Entity("other")("abc"),))
+        assert len(a.r) == 1
+        assert a.r[0]['entities'][0]['entity'] == "other"
+
+class TestActionClient(object):
+    """
+        Test an action being used as a logging client
+    """
+    def test_default(self):
+        a = TestableAction("do_something")
+        a.log("Hello World")
+        assert len(a.r) == 1
+        assert a.r[0]['action'] == a
+
+    def test_override(self):
+        a = TestableAction("do_something")
+        b = Action("something_else")
+        a.log("Hello World", action=b)
+        assert len(a.r) == 1
+        assert a.r[0]['action'] == b

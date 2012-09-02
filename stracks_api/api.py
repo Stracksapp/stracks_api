@@ -40,7 +40,7 @@ class API(object):
                                         owner=owner))
     def send_request(self, session, data):
         """
-            Ignore request if it has no (relevant) entries
+            Ignore request if it has no (relevant) entries.
         """
         if not data.get('entries'):
             return
@@ -76,18 +76,23 @@ class Session(object):
         self.api.session_end(self)
 
 
-class Entity(Logger):
+class EntityInstance(Logger, dict):
+    def __init__(self, *args, **kw):
+        super(EntityInstance, self).__init__(*args, **kw)
+        self.entity = self
+
+class Entity(object):
     """
         These are actually roles, not entities
     """
+    instance_class = EntityInstance
     ## allow option to implicitly create
     def __init__(self, id):
         self.entityid = id
-        self.entity = self
 
     def __call__(self, clientid, name=None):
-        return dict(entity=self.entityid, id=clientid,
-                    name=(name or self.entityid))
+        return self.instance_class(entity=self.entityid, id=clientid,
+                    name=(name or str(clientid)))
 
 
 class Action(Logger):

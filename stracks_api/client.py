@@ -25,51 +25,65 @@ class Logger(object):
     def r(self):
         return get_request()
 
-    def __call__(self, msg, entities=(), action=None, tags=(),
-                 level=levels.INFO, exception=None, data=None):
+    #def log(self, msg, *entities, action=None, tags=(),
+    #             level=levels.INFO, exception=None, data=None):
+    #def log(self, msg, *entities, **kw):
+    #    return self._log(msg, level=levels.INFO, **kw)
+
+    def _log(self, msg, *entities, **kw):
         if not self.r:
             return  ## can't do anything without a request
 
-        if not isinstance(entities, collections.Iterable) \
-            or isinstance(entities, types.StringTypes):
-            entities = (entities,)
+        ## backwards compatibility: allow entities to be explicitly named 
+        entities = entities or kw.get('entities', ())
+        if not entities and self.entity:
+            entities = (self.entity,)
 
-        self.r.log(msg, entities=entities, action=action, tags=tags,
+        action = kw.get('action')
+        tags = kw.get('tags')
+        level = kw.get('level')
+        exception = kw.get('exception')
+        data = kw.get('data')
+        self.r.log(msg, entities=entities, action=action or self.action,
+                   tags=tags,
                    level=level, exception=exception, data=data)
 
     def set_owner(self, owner):
         self.r.set_owner(owner)
 
-logger = Logger()
+    def debug(self, msg, *entities, **kw):
+        self._log(msg, level=levels.DEBUG, *entities, **kw)
 
-def set_owner(u):
-    logger.set_owner(u)
+    def info(self, msg, *entities, **kw):
+        self._log(msg, level=levels.INFO, *entities, **kw)
 
-def debug(msg, entities=(), action=None, tags=(), exception=None, data=None):
-    logger(msg, entities=entities, action=action, tags=tags,
-         level=levels.DEBUG, exception=exception, data=data)
+    log = info
 
-def info(msg, entities=(), action=None, tags=(), exception=None, data=None):
-    logger(msg, entities=entities, action=action, tags=tags,
-         level=levels.INFO, exception=exception, data=data)
+    def warning(self, msg, *entities, **kw):
+        self._log(msg, level=levels.WARNING, *entities, **kw)
 
-log = info
-def warning(msg, entities=(), action=None, tags=(), exception=None, data=None):
-    logger(msg, entities=entities, action=action, tags=tags,
-         level=levels.WARNING, exception=exception, data=data)
+    def error(self, msg, *entities, **kw):
+        self._log(msg, level=levels.ERROR, *entities, **kw)
 
-def error(msg, entities=(), action=None, tags=(), exception=None, data=None):
-    logger(msg, entities=entities, action=action, tags=tags,
-         level=levels.ERROR, exception=exception, data=data)
+    fatal = error
 
-fatal = error
+    def critical(self, msg, *entities, **kw):
+        self._log(msg, level=levels.CRITICAL, *entities, **kw)
 
-def critical(msg, entities=(), action=None, tags=(), exception=None, data=None):
-    logger(msg, entities=entities, action=action, tags=tags,
-         level=levels.CRITICAL, exception=exception, data=data)
+    def exception(self, msg, *entities, **kw):
+        if not kw.get('exception'):
+            kw['exception'] = True
+        self._log(msg, level=levels.EXCEPTION, *entities, **kw)
 
-def exception(msg, entities=(), action=None, tags=(), exception=None, data=None):
-    """ if no exception is specified default to True """
-    logger(msg, entities=entities, action=action, tags=tags,
-         level=levels.EXCEPTION, exception=exception or True, data=data)
+default_logger = Logger()
 
+set_owner = default_logger.set_owner
+
+debug = default_logger.debug
+info = default_logger.info
+log = default_logger.log
+warning = default_logger.warning
+error = default_logger.error
+fatal = default_logger.fatal
+critical = default_logger.critical
+exception = default_logger.exception
