@@ -18,6 +18,9 @@ class Logger(object):
     """
         The request is where logging is stored on.
     """
+    action = None
+    entity = None
+
     @property
     def r(self):
         return get_request()

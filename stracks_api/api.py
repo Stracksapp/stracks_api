@@ -10,6 +10,7 @@ import cStringIO
 import traceback
 
 from stracks_api import levels
+from stracks_api.client import Logger
 
 
 try:
@@ -75,22 +76,24 @@ class Session(object):
         self.api.session_end(self)
 
 
-class Entity(object):
+class Entity(Logger):
     """
         These are actually roles, not entities
     """
     ## allow option to implicitly create
     def __init__(self, id):
         self.entityid = id
+        self.entity = self
 
     def __call__(self, clientid, name=None):
         return dict(entity=self.entityid, id=clientid,
                     name=(name or self.entityid))
 
 
-class Action(object):
+class Action(Logger):
     def __init__(self, id):
         self.actionid = id
+        self.action = self
 
     def __call__(self):
         return dict(action=self.actionid)

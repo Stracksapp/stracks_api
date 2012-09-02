@@ -1,4 +1,6 @@
-from stracks_api.api import Connector, API, Entity, Action
+from stracks_api.api import API, Entity, Action
+from stracks_api.connector import Connector
+
 from stracks_api import levels
 from stracks_api.util import parse_dt
 
