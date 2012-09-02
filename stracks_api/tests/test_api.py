@@ -181,26 +181,11 @@ class TestEntry(object):
         assert entry['tags'][0] == "tag1"
         assert entry['tags'][1] == "tag2"
 
-class DummyRequest(list, Request):
-    def __init__(self):
-        self.entries = self
-
-    def set_owner(self, o):
-        pass
-
-    def xlog(self, msg, level=levels.INFO, entities=(), tags=(), action=None,
-            exception=None, data=None):
-        self.append(dict(msg=msg, level=level, entities=entities,
-                              tags=tags, action=action, exception=exception,
-                              data=data))
-
-    def __nonzero__(self):
-        return True
 
 class Testable(object):
     def __init__(self, *args, **kw):
         super(Testable, self).__init__(*args, **kw)
-        self._r = DummyRequest()
+        self._r = Request(None, "1.2.3.4", "test-client", "/test")
 
     @property
     def r(self):
@@ -227,7 +212,7 @@ class TestClient(object):
         log = TestableLogger()
         def test_level(m, l):
             m("test %d" % l)
-            assert log.r[-1]['level'] == l
+            assert log.r.entries[-1]['level'] == l
 
         for method, level in ((log.debug, levels.DEBUG),
                               (log.info, levels.INFO),
@@ -244,8 +229,8 @@ class TestClient(object):
         except ValueError:
             self.log.exception("Something went wrong")
 
-        assert len(self.log.r) == 1
-        assert 'magic-marker-123' in self.log.r[0]['exception']
+        assert len(self.log.r.entries) == 1
+        assert 'magic-marker-123' in self.log.r.entries[0]['exception']
 
 class TestEntityClient(object):
     """
@@ -254,14 +239,14 @@ class TestEntityClient(object):
     def test_default(self):
         a = TestableEntity("something")("someone")
         a.log("Hello World")
-        assert len(a.r) == 1
-        assert a.r[0]['entities'][0]['entity'] == "something"
+        assert len(a.r.entries) == 1
+        assert a.r.entries[0]['entities'][0]['entity'] == "something"
 
     def test_override(self):
         a = TestableEntity("something")("someone")
         a.log("Hello World", entities=(Entity("other")("abc"),))
-        assert len(a.r) == 1
-        assert a.r[0]['entities'][0]['entity'] == "other"
+        assert len(a.r.entries) == 1
+        assert a.r.entries[0]['entities'][0]['entity'] == "other"
 
 class TestActionClient(object):
     """
@@ -270,12 +255,12 @@ class TestActionClient(object):
     def test_default(self):
         a = TestableAction("do_something")
         a.log("Hello World")
-        assert len(a.r) == 1
-        assert a.r[0]['action'] == a
+        assert len(a.r.entries) == 1
+        assert a.r.entries[0]['action'] == a
 
     def test_override(self):
         a = TestableAction("do_something")
         b = Action("something_else")
         a.log("Hello World", action=b)
-        assert len(a.r) == 1
-        assert a.r[0]['action'] == b
+        assert len(a.r.entries) == 1
+        assert a.r.entries[0]['action'] == b
