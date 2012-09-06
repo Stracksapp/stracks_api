@@ -16,7 +16,7 @@ from stracks_api.client import Logger
 try:
     from django.conf import settings
     STRACKS_CONNECTOR = settings.STRACKS_CONNECTOR
-except ImportError:
+except (ImportError, AttributeError):
     STRACKS_CONNECTOR = None
     STRACKS_API = None
 
