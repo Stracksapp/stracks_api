@@ -18,7 +18,7 @@ setup(name='stracks_api',
       include_package_data=True,
       zip_safe=False,
       install_requires=[
-          # -*- Extra requirements: -*-
+          'requests',
       ],
       entry_points="""
       # -*- Entry points: -*-
