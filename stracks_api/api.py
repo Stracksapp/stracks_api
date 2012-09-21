@@ -96,7 +96,7 @@ class Entity(object):
 class Action(Logger):
     def __init__(self, id):
         self.actionid = id
-        self.action = self
+        self.action = self()
 
     def __call__(self):
         return dict(action=self.actionid)

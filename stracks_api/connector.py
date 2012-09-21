@@ -60,13 +60,14 @@ class HTTPConnector(Connector):
     """
         Connect to the API synchronously through HTTP
     """
-    def __init__(self, url):
+    def __init__(self, url, debug=False):
         """
             A HTTP connector takes the url of the API / AppInstance as
             argument
         """
         self.url = url
         self.queue = []
+        self._debug = debug
 
     def session_start(self, sessionid):
         data = {}
@@ -109,12 +110,11 @@ class ASyncHTTPConnector(HTTPConnector):
     TIMEOUT = 10 # seconds
 
     def __init__(self, url, debug=False):
-        super(ASyncHTTPConnector, self).__init__(url)
+        super(ASyncHTTPConnector, self).__init__(url, debug)
         self.thread = None
         self.lock = threading.Lock()
         self.thread_queue = Queue.Queue()
         self.backlog = []
-        self._debug = debug
 
     def debug(self, s):
         if self._debug:
