@@ -237,3 +237,10 @@ class RedisConnector(Connector):
         where a separate task is responsible for sending the data to the
         Stracks API
     """
+
+class CeleryConnector(HTTPConnector):
+    def flush(self):
+        from tasks import StracksFlushTask
+
+        if self.queue:
+            StracksFlushTask().delay(url=self.url, data=json.dumps(self.queue))
