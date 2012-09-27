@@ -92,8 +92,28 @@ class HTTPConnector(Connector):
 
     def flush(self):
         if self.queue:
-            requests.post(self.url + "/", data=json.dumps(self.queue))
-            self.queue = []
+            try:
+                requests.post(self.url + "/", data=json.dumps(self.queue))
+                self.queue = []
+            except requests.exceptions.Timeout:
+                pass
+            except requests.exceptions.TooManyRedirects:
+                pass
+            except requests.exceptions.URLRequired:
+                pass
+            except requests.exceptions.SSLError:
+                pass
+            except requests.exceptions.ConnectionError:
+                pass
+            except requests.exceptions.HTTPError:
+                pass
+            except requests.exceptions.RequestException:
+                pass
+            except Exception, e:
+                pass
+
+            ## register the problem, report it back to the server
+            ## once the connection stops failing.
 
 import threading
 import Queue
