@@ -5,14 +5,17 @@ import types
 import threading
 threadlocal = threading.local()
 
-def set_request(r):
+def set_context(r):
     threadlocal.request = r
 
-def get_request():
+def get_context():
     try:
         return threadlocal.request
     except AttributeError:
         return None
+
+get_request = get_context ## deprecated
+set_request = set_context ##    ,,
 
 class Logger(object):
     """
