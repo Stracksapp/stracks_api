@@ -10,7 +10,7 @@ import cStringIO
 import traceback
 
 from stracks_api import levels
-from stracks_api.client import Logger
+from stracks_api.client import Logger, set_request, exception
 
 
 try:
@@ -28,11 +28,15 @@ class API(object):
     def _get_connector(self):
         return self.connector or STRACKS_CONNECTOR
 
-    def session(self):
-        s = Session(self)
+    def session(self, id=None):
+        s = Session(self, id)
         self._get_connector().send(dict(action='session_start',
                                  sessionid=s.id))
         return s
+
+    def task_context(self, sessionid=None, agent="Task", path="/"):
+        s = self.session(sessionid)
+        return s.request('0.0.0.0', agent, path)
 
     def set_owner(self, sessionid, owner):
         self._get_connector().send(dict(action="owner",
@@ -54,11 +58,11 @@ class API(object):
 
 
 class Session(object):
-    def __init__(self, api):
+    def __init__(self, api, id=None):
         self.api = api
         self.requests = []
-        self.id = datetime.datetime.utcnow().strftime("%s.%f") \
-                         + str(random.random() * 1000000)
+        self.id = id or (datetime.datetime.utcnow().strftime("%s.%f") \
+                         + str(random.random() * 1000000))
 
     def request(self, ip, useragent, path):
         r = Request(self, ip, useragent, path)
@@ -102,6 +106,8 @@ class Action(Logger):
         return dict(action=self.actionid)
 
 
+
+
 class Request(object):
     def __init__(self, session, ip, useragent, path):
         self.session = session
@@ -112,6 +118,9 @@ class Request(object):
         self.ended = None
         self.entries = []
         self.owner = None
+
+    def context(self):
+        return RequestContextManager(self)
 
     def log(self, msg, level=levels.INFO, entities=(), tags=(), action=None,
             exception=None, data=None):
@@ -176,3 +185,13 @@ class Request(object):
                  entries=self.entries,
                  owner=self.owner)
         return d
+
+    def __enter__(self):
+        set_request(self)
+        return self
+
+    def __exit__(self, type, value, tb):
+        if type is not None:
+            exception("Crash: %s" % value)
+        set_request(None)
+        self.end()
