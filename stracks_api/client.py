@@ -24,6 +24,19 @@ class Logger(object):
     action = None
     entity = None
 
+    @classmethod
+    def withAction(cls, action):
+        l = cls()
+        l.action = action
+        return l
+
+    @classmethod
+    def withEntity(cls, entity):
+        l = cls()
+        l.entity = entity
+        return l
+
+
     @property
     def r(self):
         return get_request()

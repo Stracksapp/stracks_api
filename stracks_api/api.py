@@ -195,3 +195,35 @@ class Request(object):
             exception("Crash: %s" % value)
         set_request(None)
         self.end()
+
+
+class DjangoUser(Entity):
+    def __init__(self, id="user/user"):
+        super(DjangoUser, self).__init__(id)
+
+    def __call__(self, req_or_user):
+        try: ## request?
+            user = req_or_user.user
+        except AttributeError:
+            ## user
+            user = req_or_user
+        if user.is_anonymous():
+            clientid = -1
+            name = "Anonymous User"
+        else:
+            clientid = user.id
+            name = user.get_full_name()
+
+        return super(DjangoUser, self).__call__(clientid, name)
+
+class LogMixin(object):
+    @property
+    def log(self):
+        try:
+            logger = self._logger
+        except AttributeError:
+            logger = self._logger = self.construct_logger()
+        return logger
+
+    def construct_logger(self):
+        return Logger()
