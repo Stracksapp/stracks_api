@@ -153,7 +153,11 @@ class Request(object):
                 data['schema']  ## it might not even be a dict
             except (KeyError, TypeError):
                 data = dict(schema='generic', data=data)
-            data = json.dumps(data)
+            try:
+                data = json.dumps(data)
+            except (TypeError, ValueError), e:
+                data = dict(schema='error', data="Error while encoding data: %s" % str(e))
+
 
         self.entries.append(
             dict(msg=msg,
