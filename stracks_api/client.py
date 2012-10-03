@@ -14,6 +14,12 @@ def get_context():
     except AttributeError:
         return None
 
+def sessionid():
+    r = get_context()
+    if r:
+        return r.session.id
+    return None
+
 get_request = get_context ## deprecated
 set_request = set_context ##    ,,
 
