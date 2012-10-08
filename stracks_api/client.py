@@ -59,7 +59,7 @@ class Logger(object):
         ## backwards compatibility: allow entities to be explicitly named 
         entities = tuple(entities) or kw.get('entities', ())
         if self.entity:
-            entities += (self.entity,)
+            entities = (self.entity,) + entities
 
         action = kw.get('action')
         tags = kw.get('tags')
