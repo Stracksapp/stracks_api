@@ -57,9 +57,9 @@ class Logger(object):
             return  ## can't do anything without a request
 
         ## backwards compatibility: allow entities to be explicitly named 
-        entities = entities or kw.get('entities', ())
-        if not entities and self.entity:
-            entities = (self.entity,)
+        entities = tuple(entities) or kw.get('entities', ())
+        if self.entity:
+            entities += (self.entity,)
 
         action = kw.get('action')
         tags = kw.get('tags')
