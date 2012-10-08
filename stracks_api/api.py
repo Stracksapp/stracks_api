@@ -217,6 +217,8 @@ class DjangoUser(Entity):
         else:
             clientid = user.id
             name = user.get_full_name()
+            if not name:
+                name = user.email
 
         return super(DjangoUser, self).__call__(clientid, name)
 
