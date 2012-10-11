@@ -211,7 +211,7 @@ class DjangoUser(Entity):
         except AttributeError:
             ## user
             user = req_or_user
-        if user.is_anonymous():
+        if not user or user.is_anonymous():
             clientid = -1
             name = "Anonymous User"
         else:
