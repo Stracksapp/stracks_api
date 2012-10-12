@@ -7,7 +7,8 @@ except (ImportError, AttributeError):
     STRACKS_API = None
 
 from stracks_api.api import API
-from stracks_api import client, levels
+from stracks_api import client
+import django.http
 
 STRACKS_API = None
 
@@ -61,5 +62,9 @@ class StracksMiddleware(object):
     def process_exception(self, request, exception):
         if not STRACKS_API:
             return
+        ## do not log 404 exceptions, see issue #356
+        if isinstance(exception, django.http.Http404):
+            return
+        
         client.exception("Crash: %s" % exception)
 
