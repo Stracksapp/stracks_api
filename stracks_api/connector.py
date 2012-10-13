@@ -246,3 +246,48 @@ class CeleryConnector(HTTPConnector):
             StracksFlushTask().delay(url=self.url,
                                      data=json.dumps(self.queue))
             self.queue = []
+
+class MultiplexConnector(Connector):
+    """
+        Dispatch a single connector over multiple connects,
+        e.g.
+
+        connector = MultiplexConnector(
+            HTTPConnector(...),
+            FilesystemConnector(...)
+        )
+    """
+    def __init__(self, *connectors):
+        """ handle 0 or more connectors """
+        self.connectors = connectors
+
+    def session_start(self, sessionid):
+        """ dispatch across all connectors """
+        for connector in self.connectors:
+            connector.session_start(sessionid)
+
+    def session_end(self, sessionid):
+        """ dispatch across all connectors """
+        for connector in self.connectors:
+            connector.session_end(sessionid)
+
+    def request(self, sessionid, requestdata):
+        """ dispatch across all connectors """
+        for connector in self.connectors:
+            connector.request(sessionid, requestdata)
+
+    def send(self, data):
+        """ dispatch across all connectors """
+        for connector in self.connectors:
+            connector.send(data)
+
+class FilesystemConnector(HTTPConnector):
+    def __init__(self, path):
+        self.queue = []
+        self._debug = False
+        self.path = path
+
+    def flush(self):
+        with open(self.path, "a") as f:
+            f.write(json.dumps(self.queue))
+
