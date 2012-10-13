@@ -243,5 +243,6 @@ class CeleryConnector(HTTPConnector):
         from tasks import StracksFlushTask
 
         if self.queue:
-            StracksFlushTask().delay(url=self.url, data=json.dumps(self.queue))
+            StracksFlushTask().delay(url=self.url,
+                                     data=json.dumps(self.queue))
             self.queue = []
