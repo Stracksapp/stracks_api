@@ -30,8 +30,10 @@ class API(object):
 
     def session(self, id=None):
         s = Session(self, id)
-        self._get_connector().send(dict(action='session_start',
-                                 sessionid=s.id))
+        c = self._get_connector()
+        if c:
+            c.send(dict(action='session_start',
+                                     sessionid=s.id))
         return s
 
     def task_context(self, sessionid=None, agent="Task", path="/"):
@@ -39,22 +41,28 @@ class API(object):
         return s.request('0.0.0.0', agent, path)
 
     def set_owner(self, sessionid, owner):
-        self._get_connector().send(dict(action="owner",
-                                        sessionid=sessionid,
-                                        owner=owner))
+        c = self._get_connector()
+        if c:
+            c.send(dict(action="owner",
+                                            sessionid=sessionid,
+                                            owner=owner))
     def send_request(self, session, data):
         """
             Ignore request if it has no (relevant) entries.
         """
         if not data.get('entries'):
             return
-        self._get_connector().send(dict(action="request",
-                                 sessionid=session.id,
-                                 data=data))
+        c = self._get_connector()
+        if c:
+            c.send(dict(action="request",
+                                     sessionid=session.id,
+                                     data=data))
 
     def session_end(self, session):
-        self._get_connector().send(dict(action='session_end',
-                                 sessionid=session.id))
+        c = self._get_connector()
+        if c:
+            c.send(dict(action='session_end',
+                                     sessionid=session.id))
 
 
 class Session(object):
