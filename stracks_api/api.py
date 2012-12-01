@@ -129,9 +129,6 @@ class Request(object):
         self.entries = []
         self.owner = None
 
-    def context(self):
-        return RequestContextManager(self)
-
     def log(self, msg, level=levels.INFO, entities=(), tags=(), action=None,
             exception=None, data=None):
         ## perform some validation on msg and entities
