@@ -259,10 +259,15 @@ class TestEntityClient(object):
         assert a.r.entries[0]['entities'][0]['entity'] == "something"
 
     def test_override(self):
+        """ entity itself remains first/primary entity, others
+            are appended """
         a = TestableEntity("something")("someone")
         a.log("Hello World", entities=(Entity("other")("abc"),))
         assert len(a.r.entries) == 1
-        assert a.r.entries[0]['entities'][0]['entity'] == "other"
+        entities = a.r.entries[0]['entities']
+
+        assert entities[0]['entity'] == "something"
+        assert entities[1]['entity'] == "other"
 
 class TestActionClient(object):
     """
@@ -272,7 +277,7 @@ class TestActionClient(object):
         a = TestableAction("do_something")
         a.log("Hello World")
         assert len(a.r.entries) == 1
-        assert a.r.entries[0]['action'] == a
+        assert a.r.entries[0]['action'] == a()
 
     def test_override(self):
         a = TestableAction("do_something")
