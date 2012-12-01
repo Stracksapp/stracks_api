@@ -1,22 +1,7 @@
 from stracks_api.api import API, Entity, Action
-from stracks_api.client import Logger
-
-from stracks_api.connector import Connector
-
 from stracks_api import levels
+from stracks_api.tests.base import DummyConnector
 
-class DummyConnector(Connector):
-    def __init__(self):
-        self._log = []
-
-    def send(self, data):
-        self._log.append(data)
-
-    def transcription(self):
-        return self._log
-
-    def clear(self):
-        self._log = []
 
 class TestAPI(object):
     def setup(self):
