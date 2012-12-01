@@ -1,13 +1,9 @@
 from stracks_api.api import API, Entity, Action
 from stracks_api import levels
-from stracks_api.tests.base import DummyConnector
+from stracks_api.tests.base import DummyConnector, APIBase, RequestBase
 
 
-class TestAPI(object):
-    def setup(self):
-        self.connector = DummyConnector()
-        self.api = API(self.connector)
-
+class TestAPI(APIBase):
     def test_single_session(self):
         s = self.api.session()
         s.end()
@@ -70,20 +66,12 @@ class TestAPI(object):
         assert "action" in e
         assert e['msg'] == "hello world"
 
-class TestEntry(object):
+
+class TestEntry(RequestBase):
     """
         Test the different aspects of entry logging
         (entities, tags)
     """
-    def setup(self):
-        self.connector = DummyConnector()
-        self.api = API(self.connector)
-        self.session = self.api.session()
-        self.request = self.session.request('1.2.3.4', 'test agent', '/')
-
-    def get_entry(self):
-        """ Retrieve the first (only) entry from the request """
-        return self.connector.transcription()[1]['data']['entries'][0]
 
     def test_msg(self):
         self.request.log("Hello World")
