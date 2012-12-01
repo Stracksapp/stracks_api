@@ -46,4 +46,4 @@ class TestActionClient(object):
         b = Action("something_else")
         a.log("Hello World", action=b)
         assert len(a.r.entries) == 1
-        assert a.r.entries[0]['action'] == b
+        assert a.r.entries[0]['action'] == b()
