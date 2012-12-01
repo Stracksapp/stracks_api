@@ -118,8 +118,6 @@ class Action(Logger):
         return dict(action=self.actionid)
 
 
-
-
 class Request(object):
     def __init__(self, session, ip, useragent, path):
         self.session = session
@@ -170,6 +168,8 @@ class Request(object):
             except (TypeError, ValueError), e:
                 data = dict(schema='error', data="Error while encoding data: %s" % str(e))
 
+        if callable(action):
+            action = action()
 
         self.entries.append(
             dict(msg=msg,
