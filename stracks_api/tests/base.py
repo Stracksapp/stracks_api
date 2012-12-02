@@ -15,8 +15,18 @@ class DummyConnector(Connector):
     def __init__(self):
         self._log = []
 
-    def send(self, data):
-        self._log.append(data)
+    def session_start(self, session_id):
+        self._log.append(dict(action="session_start",
+                              sessionid=session_id))
+
+    def session_end(self, session_id):
+        self._log.append(dict(action="session_end",
+                              sessionid=session_id))
+
+    def request(self, session_id, requestdata):
+        self._log.append(dict(action="request",
+                              sessionid=session_id,
+                              data=requestdata))
 
     def transcription(self):
         return self._log
