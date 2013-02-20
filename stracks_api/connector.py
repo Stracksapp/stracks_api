@@ -134,6 +134,7 @@ class ASyncHTTPConnector(HTTPConnector):
         self.thread = None
         self.lock = threading.Lock()
         self.thread_queue = Queue.Queue()
+        self.thread_command = Queue.Queue()
         self.backlog = []
 
     def debug(self, s):
@@ -143,69 +144,71 @@ class ASyncHTTPConnector(HTTPConnector):
     def loop(self):
         while True:
             self.debug("Loop")
+
             try:
-                item = self.thread_queue.get(timeout=10)
+                command = self.thread_command.get_nowait()
+                if command is self.terminate:
+                    ## serialize log queue
+                    return
+            except Queue.Empty:
+                pass
+
+            try:
+                item = self.thread_queue.get(timeout=5)
                 self.backlog.append(item)
             except Queue.Empty:
-                self.debug("Queue 10 sec timeout")
+                self.debug("Queue 5 sec timeout")
+
 
             self.debug("Queue size: %d, backlog size: %d" % (self.thread_queue.qsize(), len(self.backlog)))
 
             ##
-            ## flush entire backlog if possible. May be just one item
-            ## (or none at all if queue.get timed out)
-            while self.backlog:
-                item = self.backlog[0]
-                if item is self.terminate:
-                    self.debug("Terminating")
-                    return  # break out of two loops
-
-                ## https://github.com/kennethreitz/grequests ?
-
-                error = False
-                try:
+            ## Try to flush entire backlog
+            error = False
+            try:
+                while self.backlog:
+                    item = self.backlog[0]
                     requests.post(self.url + "/", data=json.dumps(item),
                                   timeout=self.TIMEOUT)
+                    self.debug("Post" + json.dumps(item))
                     self.backlog.pop()
-                except requests.exceptions.Timeout:
-                    self.debug("Connection timed out")
-                    error = True
-                except requests.exceptions.TooManyRedirects:
-                    self.debug("Too many redirects")
-                    error = True
-                except requests.exceptions.URLRequired:
-                    self.debug("Not a valid URL")
-                    error = True
-                except requests.exceptions.SSLError:
-                    self.debug("SSL Error")
-                    error = True
-                except requests.exceptions.ConnectionError:
-                    self.debug("Connection error")
-                    error = True
-                except requests.exceptions.HTTPError:
-                    self.debug("HTTP error")
-                    error = True
-                except requests.exceptions.RequestException:
-                    self.debug("Request exception")
-                    error = True
-                except Exception, e:
-                    self.debug("Unknown exception: " + str(e))
-                    error = True
-                if error:
-                    ## increase the delay, but not infinitely
-                    # delay = 10 * min(5, tries)
-                    ## log error so we can report it eventually
-                    self.debug("Delaying")
-                    break
+            except requests.exceptions.Timeout:
+                self.debug("Connection timed out")
+                error = True
+            except requests.exceptions.TooManyRedirects:
+                self.debug("Too many redirects")
+                error = True
+            except requests.exceptions.URLRequired:
+                self.debug("Not a valid URL")
+                error = True
+            except requests.exceptions.SSLError:
+                self.debug("SSL Error")
+                error = True
+            except requests.exceptions.ConnectionError:
+                self.debug("Connection error")
+                error = True
+            except requests.exceptions.HTTPError:
+                self.debug("HTTP error")
+                error = True
+            except requests.exceptions.RequestException:
+                self.debug("Request exception")
+                error = True
+            except Exception, e:
+                self.debug("Unknown exception: " + str(e))
+                error = True
+            if error:
+                ## increase the delay, but not infinitely
+                # delay = 10 * min(5, tries)
+                ## log error so we can report it eventually
+                self.debug("Delaying")
 
-                self.debug("Post" + json.dumps(item))
 
     def stop(self):
         self.lock.acquire()
         try:
             self.debug("Stopping thread")
             if self.thread is not None:
-                self.thread_queue.put_nowait(self.terminate)
+                self.thread_command.put_nowait(self.terminate)
                 self.thread.join()
                 self.thread = None
         finally:
