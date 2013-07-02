@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 import sys, os
 
-version = '0.1'
+version = '0.2'
 
 setup(name='stracks_api',
       version=version,
@@ -12,7 +12,7 @@ setup(name='stracks_api',
       keywords='',
       author='Ivo van der Wijk',
       author_email='stracks-api@in.m3r.nl',
-      url='',
+      url='http://github.com/Stracksapp/stracks_api',
       license='',
       packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
       include_package_data=True,
